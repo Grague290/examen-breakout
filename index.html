@@ -20,21 +20,28 @@
       let gameOverAlpha = 255;
       let pauseButton, resetButton;
       let isPaused = false;
+      let canvas;
+      const canvasWidth = 600;
+      const canvasHeight = 400;
+
 
       function setup() {
-        createCanvas(600, 400);
+        canvas = createCanvas(canvasWidth, canvasHeight);
+        centerCanvas();
+      
         paddle = new Paddle();
         ball = new Ball();
         setupLevel(level);
-
+      
         pauseButton = createButton("⏸ Pausar");
-        pauseButton.position(width + 20, 40);
         pauseButton.mousePressed(togglePause);
-
+      
         resetButton = createButton("🔄 Reiniciar");
-        resetButton.position(width + 20, 80);
         resetButton.mousePressed(resetGame);
+      
+        positionButtons();
       }
+      
 
       function draw() {
         background(0);
@@ -105,6 +112,26 @@
         }
       }
 
+      function centerCanvas() {
+        let x = (windowWidth - canvasWidth) / 2;
+        let y = (windowHeight - canvasHeight) / 2;
+        canvas.position(x, y);
+      }
+      
+      function positionButtons() {
+        let x = canvas.position().x + canvasWidth + 20;
+        let y = canvas.position().y;
+      
+        pauseButton.position(x, y + 40);
+        resetButton.position(x, y + 80);
+      }
+
+      function windowResized() {
+        centerCanvas();
+        positionButtons();
+      }
+      
+
       function drawInfo() {
         fill(255);
         textSize(16);
@@ -142,26 +169,43 @@
         let cols = 10;
         let blockWidth = width / cols;
         let blockHeight = 20;
-
+      
+        let totalBlocks = rows * cols;
+      
+        // Generar índices aleatorios únicos
+        let specialIndexes = [];
+        let required = (n === 2) ? 1 : (n === 3) ? 3 : 0;
+        while (specialIndexes.length < required + (n === 3 ? 1 : 0)) {
+          let randIndex = floor(random(totalBlocks));
+          if (!specialIndexes.includes(randIndex)) {
+            specialIndexes.push(randIndex);
+          }
+        }
+      
+        let tripleHitIndexes = specialIndexes.slice(0, required);
+        let indestructibleIndex = (n === 3) ? specialIndexes[specialIndexes.length - 1] : -1;
+      
+        let index = 0;
+      
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
             let x = c * blockWidth;
             let y = 40 + r * blockHeight;
+      
             let hits = 1;
             let indestructible = false;
-
-            if (n === 2 && r === 0 && c === 0) hits = 3;
-            if (n === 3) {
-              if ((r === 0 && c < 2) || (r === 1 && c === 1)) hits = 3;
-              if (r === 0 && c === 9) indestructible = true;
-            }
-
+      
+            if (tripleHitIndexes.includes(index)) hits = 3;
+            if (index === indestructibleIndex) indestructible = true;
+      
             blocks.push(new Block(x, y, blockWidth, blockHeight, hits, indestructible));
+            index++;
           }
         }
-
+      
         ball.setSpeed(n);
       }
+      
 
       function keyPressed() {
         if (keyCode === LEFT_ARROW || key === 'a' || key === 'A') {
